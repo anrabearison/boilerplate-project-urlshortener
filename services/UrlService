@@ -1,0 +1,36 @@
+const dns = require('dns');
+const Url = require('../models/Url');
+
+class UrlService {
+  constructor() {
+    this.urlModel = Url;
+  }
+
+  // Method to validate if the URL is valid using DNS
+  validateUrl(url) {
+    const hostname = url.replace(/https?:\/\//, '').split('/')[0];
+    return new Promise((resolve, reject) => {
+      dns.lookup(hostname, (err) => {
+        if (err) reject('invalid url');
+        resolve();  // If no error, the URL is valid
+      });
+    });
+  }
+
+  // Method to generate a new shortened URL entry
+  async shortenUrl(original_url) {
+    const count = await this.urlModel.countDocuments();  // Count existing URLs
+    const short_url = count + 1;
+
+    const newUrl = new this.urlModel({ original_url, short_url });
+    await newUrl.save();  // Save the new URL to the database
+    return { original_url, short_url };
+  }
+
+  // Method to retrieve the original URL using the short URL
+  async getOriginalUrl(short_url) {
+    return await this.urlModel.findOne({ short_url });
+  }
+}
+
+module.exports = UrlService;
